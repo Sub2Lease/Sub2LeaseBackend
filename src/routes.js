@@ -119,5 +119,4 @@ router.post('/listings/:id/accept', async (req, res) => {
   }
 });
 
-
 module.exports = router;
