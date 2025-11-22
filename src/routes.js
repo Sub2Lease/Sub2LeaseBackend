@@ -22,7 +22,7 @@ router.get('/listings', async (req, res) => {
   try {
     const query = {};
     if (req.query.listingId) query._id = req.query.listingId;
-    else if (req.query.sublessorId) query.sublessor = req.query.sublessorId;
+    else if (req.query.ownerId) query.owner = req.query.ownerId;
 
     const listingsRes = await listings.find(query);
     res.json(listingsRes);
@@ -48,8 +48,8 @@ router.get('/agreements', async (req, res) => {
     const query = {};
     if (req.query.agreementId) query._id = req.query.agreementId;
     else {
-      if (req.query.sublessorId) query.sublessor = req.query.sublessorId;
-      if (req.query.sublesseeId) query.sublessee = req.query.sublesseeId;
+      if (req.query.ownerId) query.owner = req.query.ownerId;
+      if (req.query.tenantId) query.tenant = req.query.tenantId;
     }
 
     const agreementsRes = await agreements.find(query);
@@ -59,9 +59,9 @@ router.get('/agreements', async (req, res) => {
   }
 });
 
-//router.get("*", (_, res) => {
-//  res.send("Yo this is the fallback ur lowk cooked");
-//});
+router.get("*", (_, res) => {
+  res.send("Yo this is the fallback ur lowk cooked");
+});
 
 //////////////////////////
 // POST
@@ -90,10 +90,10 @@ router.post('/listings', async (req, res) => {
 router.post('/listings/:id/accept', async (req, res) => {
   try {
     const listingId = req.params.id;
-    const { startDate, endDate, sublessee, sublessor, payTerm, rent, securityDeposit, numPeople } = req.body;
+    const { startDate, endDate, tenant, owner, payTerm, rent, securityDeposit, numPeople } = req.body;
 
-    if (!startDate || !endDate || !sublessee || !sublessor || !numPeople)
-      return res.status(400).json({ error: 'Missing some required fields (startDate, endDate, sublessee, sublessor, numPeople)' });
+    if (!startDate || !endDate || !tenant || !owner || !numPeople)
+      return res.status(400).json({ error: 'Missing some required fields (startDate, endDate, tenant, owner, numPeople)' });
 
     const listing = await listings.findById(listingId);
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
@@ -108,12 +108,31 @@ router.post('/listings/:id/accept', async (req, res) => {
       numPeople,
       payTerm,
       listing: listingId,
-      sublessor,
-      sublessee
+      owner,
+      tenant
     });
 
     const savedAgreement = await newAgreement.save();
     res.status(201).json(savedAgreement);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.all("*catch", (_, res) => {
+  res.send("Yo this is the fallback ur lowk cooked");
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await users.findOne({ email, password }).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    } else {
+      return res.json(user);
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
