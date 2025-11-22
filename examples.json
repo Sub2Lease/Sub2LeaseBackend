@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "name",
+    "email": "email",
+    "password": "password"
+  },
+  {
+    "id": 2,
+    "description": "This is the second example.",
+    "data": {
+      "keyA": "valueA",
+      "keyB": "valueB"
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "name": "sub2leasebackend",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Sub2Lease/Sub2LeaseBackend#readme",
+  "bugs": {
+    "url": "https://github.com/Sub2Lease/Sub2LeaseBackend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sub2Lease/Sub2LeaseBackend.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
