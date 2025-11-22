@@ -119,4 +119,19 @@ router.all("*catch", (_, res) => {
   res.send("Yo this is the fallback ur lowk cooked");
 });
 
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await users.findOne({ email, password }).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    } else {
+      return res.json(user);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
