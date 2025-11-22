@@ -59,10 +59,6 @@ router.get('/agreements', async (req, res) => {
   }
 });
 
-router.get("*", (_, res) => {
-  res.send("Yo this is the fallback ur lowk cooked");
-});
-
 //////////////////////////
 // POST
 //////////////////////////
@@ -117,6 +113,10 @@ router.post('/listings/:id/accept', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.all("*catch", (_, res) => {
+  res.send("Yo this is the fallback ur lowk cooked");
 });
 
 module.exports = router;
