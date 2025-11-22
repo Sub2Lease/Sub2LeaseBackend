@@ -59,7 +59,7 @@ router.get('/agreements', async (req, res) => {
   }
 });
 
-router.get("/", (_, res) => {
+router.get("*", (_, res) => {
   res.send("Yo this is the fallback ur lowk cooked");
 });
 
