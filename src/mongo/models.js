@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+const options = {
+  strict: true,
+  toJSON: {
+    transform(_, ret, options) {
+      if (!options.keepVersion) {
+        delete ret.__v;
+      }
+      return ret;
+    }
+  },
+  toObject: {
+    transform(_, ret, options) {
+      if (!options.keepVersion) {
+        delete ret.__v;
+      }
+      return ret;
+    }
+  }
+};
+
 const userSchema = new mongoose.Schema({
   name: { type: String, index: true, required: true },
   email: { type: String, required: true },
@@ -10,7 +30,7 @@ const userSchema = new mongoose.Schema({
   // agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   savedListings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
   profileImg: Buffer
-}, { strict: true });
+}, options);
 
 const listingSchema = new mongoose.Schema({
   description: String,
@@ -25,7 +45,7 @@ const listingSchema = new mongoose.Schema({
   agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   images: { type: [Buffer], default: () => [] },
   capacity: { type: Number, required: true },
-}, { strict: true });
+}, options);
 
 const agreementSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
@@ -37,7 +57,7 @@ const agreementSchema = new mongoose.Schema({
   listing: { type: mongoose.Schema.Types.ObjectId, ref: 'listings', required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
   tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
-}, { strict: true });
+}, options);
 
 const globalSchema = new mongoose.Schema({}, { strict: false });
 
