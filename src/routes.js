@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { users, listings, agreements } = require('@m/models');
+const { users, listings, agreements } = require('./mongo/models');
 
 //////////////////////////
 // GET

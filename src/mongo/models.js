@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, index: true, required: true },
@@ -46,7 +46,7 @@ const Listing = mongoose.models.Listing || mongoose.model('listings', listingSch
 const Agreement = mongoose.models.Agreement || mongoose.model('agreements', agreementSchema);
 const Global = mongoose.models.Global || mongoose.model('globals', globalSchema);
 
-export const models = {
+module.exports = {
   users: User,
   listings: Listing,
   agreements: Agreement,
