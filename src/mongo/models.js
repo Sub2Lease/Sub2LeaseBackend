@@ -21,7 +21,7 @@ const listingSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
   website: String,
-  sublessor: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
   agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   images: { type: [Buffer], default: () => [] },
   capacity: { type: Number, required: true },
@@ -35,8 +35,8 @@ const agreementSchema = new mongoose.Schema({
   numPeople: { type: Number, default: () => 1 },
   payTerm: { type: String, default: () => 'monthly' },
   listing: { type: mongoose.Schema.Types.ObjectId, ref: 'listings', required: true },
-  sublessor: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
-  sublessee: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
 }, { strict: true });
 
 const globalSchema = new mongoose.Schema({}, { strict: false });
