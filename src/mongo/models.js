@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   walletAddress: String,
   zipcode: String,
-  listings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
-  agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
+  // listings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
+  // agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   savedListings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
   profileImg: Buffer
 }, { strict: true });
@@ -32,7 +32,7 @@ const agreementSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   rent: { type: Number, required: true },
   securityDeposit: { type: Number, required: true },
-  people: { type: Number, required: true },
+  numPeople: { type: Number, default: () => 1 },
   payTerm: { type: String, default: () => 'monthly' },
   listing: { type: mongoose.Schema.Types.ObjectId, ref: 'listings', required: true },
   sublessor: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
