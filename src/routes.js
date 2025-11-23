@@ -179,10 +179,10 @@ router.get('/agreements/:agreementId/contract', async (req, res) => {
     };
 
     generateContract(templatePath, docFilepath, contractData);
-    doc_to_pdf(docFilepath, pdfFilepath);
-
-    res.download(pdfFilepath, downloadName, (err) => {
-      if (err) throw err;
+    doc_to_pdf(docFilepath, pdfFilepath, () => {
+      res.download(pdfFilepath, downloadName, (err) => {
+        if (err) throw err;
+      });
     });
   } catch (err) {
     res.status(500).json(debugError(err));

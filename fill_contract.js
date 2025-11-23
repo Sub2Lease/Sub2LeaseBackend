@@ -57,7 +57,7 @@ function signContract(input_path, output_path, isOwner, signature, date) {
     const buffer = doc.getZip().generate({ type: "nodebuffer" });
     fs.writeFileSync(output_path, buffer);
 }
-function doc_to_pdf(inputPath, outputPath) {
+function doc_to_pdf(inputPath, outputPath, callback) {
     const docxData = fs.readFileSync(inputPath);
 
     libre.convert(docxData, ".pdf", undefined, (err, done) => {
@@ -66,6 +66,7 @@ function doc_to_pdf(inputPath, outputPath) {
         }
         fs.writeFileSync(outputPath, done);
         console.log("Finished converting!");
+        if (callback) callback();
     });
 }
 
