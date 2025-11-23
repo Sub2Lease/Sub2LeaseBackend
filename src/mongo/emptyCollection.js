@@ -1,4 +1,5 @@
 const { dbConnect, dbDisconnect } = require('./init');
+require('dotenv').config();
 const models = require('./models');
 
 const modelName = process.argv[2]; // Grab the model name from CLI args
@@ -24,7 +25,7 @@ async function emptyCollection() {
   } catch (error) {
     console.error('Error emptying collection:', error);
   } finally {
-    await dbDisconnect();
+    // await dbDisconnect();
   }
 }
 
