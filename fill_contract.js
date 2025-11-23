@@ -20,10 +20,10 @@ function generateContract(template_path, output_path, data) {
         END_DATE: data.END_DATE,
         RENT: data.RENT,
         DEPOSIT: data.DEPOSIT,
-        OWNER_SIGNATURE: "{OWNER_SIGNATURE}",
-        TENANT_SIGNATURE: "{TENANT_SIGNATURE}",
-        OWNER_SIGN_DATE: "{OWNER_SIGN_DATE}",
-        TENANT_SIGN_DATE: "{TENANT_SIGN_DATE}"
+        OWNER_SIGNATURE: data.OWNER_SIGNATURE,
+        TENANT_SIGNATURE: data.TENANT_SIGNATURE,
+        OWNER_SIGN_DATE: data.OWNER_SIGN_DATE,
+        TENANT_SIGN_DATE: data.TENANT_SIGN_DATE
     });
 
     const buffer = doc.getZip().generate({ type: "nodebuffer" });

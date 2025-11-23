@@ -4,8 +4,7 @@ const { users, listings, agreements, messages, images } = require('./mongo/model
 const mongoose = require('mongoose');
 const { geocodeAddress } = require('./geocoding');
 const multer = require("multer");
-const { generateContract } = require("../fill_contract");
-const { convertDocxToPdf } = require("./docxToPdf");
+const { generateContract, doc_to_pdf } = require("../fill_contract");
 const path = require("node:path");
 
 const storage = multer.memoryStorage();
@@ -161,24 +160,26 @@ router.get('/agreements/:agreementId/contract', async (req, res) => {
     const templatePath = './templates/Sublease-Agreement-Template.docx';
     const downloadName = `contract-${now.replaceAll('/', '-')}-${agreementId}.pdf`;
     console.log("CWD:", process.cwd());
+
+    const error = "ERROR";
   
     const contractData = {
-      OWNER_NAME: agreement.owner.name || "aaa",
-      TENANT_NAME: agreement.tenant.name || "aaa",
-      ADDRESS: agreement.listing.address || "aaa",
-      DATE: now || "aaa",
-      START_DATE: new Date(agreement.startDate).toLocaleDateString('en-US') || "aaa",
-      END_DATE: new Date(agreement.endDate).toLocaleDateString('en-US') || "aaa",
-      RENT: agreement.rent || "aaa",
-      DEPOSIT: agreement.securityDeposit || "aaa",
-      OWNER_SIGNATURE: agreement.ownerSigned ? agreement.owner.name : "{OWNER_SIGNATURE}" || "aaa",
+      OWNER_NAME: agreement.owner.name || error,
+      TENANT_NAME: agreement.tenant.name || error,
+      ADDRESS: agreement.listing.address || error,
+      DATE: now || error,
+      START_DATE: new Date(agreement.startDate).toLocaleDateString('en-US') || error,
+      END_DATE: new Date(agreement.endDate).toLocaleDateString('en-US') || error,
+      RENT: agreement.rent || error,
+      DEPOSIT: agreement.securityDeposit || error,
+      OWNER_SIGNATURE: agreement.ownerSigned ? agreement.owner.name : "{OWNER_SIGNATURE}" || error,
       OWNER_SIGN_DATE: agreement.ownerSigned ? new Date(agreement.ownerSignDate).toLocaleDateString('en-US') : "{OWNER_SIGN_DATE}",
-      TENANT_SIGNATURE: agreement.tenantSigned ? agreement.tenant.name : "{TENANT_SIGNATURE}" || "aaa",
+      TENANT_SIGNATURE: agreement.tenantSigned ? agreement.tenant.name : "{TENANT_SIGNATURE}" || error,
       TENANT_SIGN_DATE: agreement.tenantSigned ? new Date(agreement.tenantSignDate).toLocaleDateString('en-US') : "{TENANT_SIGN_DATE}",
     };
 
     generateContract(templatePath, docFilepath, contractData);
-    await convertDocxToPdf(docFilepath, pdfFilepath);
+    doc_to_pdf(docFilepath, pdfFilepath);
 
     res.download(pdfFilepath, downloadName, (err) => {
       if (err) throw err;
