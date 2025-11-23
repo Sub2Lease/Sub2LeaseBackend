@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
+const libre = require("libreoffice-convert");
 
 function generateContract(template_path, output_path, data) {
     const content = fs.readFileSync(template_path);
@@ -56,8 +57,19 @@ function signContract(input_path, output_path, isOwner, signature, date) {
     const buffer = doc.getZip().generate({ type: "nodebuffer" });
     fs.writeFileSync(output_path, buffer);
 }
+function doc_to_pdf(inputPath, outputPath) {
+    const docxData = fs.readFileSync(inputPath);
 
-module.exports = { generateContract, signContract };
+    libre.convert(docxData, ".pdf", undefined, (err, done) => {
+        if (err) {
+            console.error(`Error converting: ${err}`);
+        }
+        fs.writeFileSync(outputPath, done);
+        console.log("Finished converting!");
+    });
+}
+
+module.exports = { generateContract, signContract, doc_to_pdf };
 
 // EXAMPLE USAGE
 // const data = {
