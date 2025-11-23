@@ -243,8 +243,8 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
     const agreement = await agreements.findById(agreementId).select('owner tenant ownerSigned tenantSigned');
     if (!agreement) return res.status(404).json({ error: 'Agreement not found' });
 
-    if (agreement.owner === userId) agreement.ownerSigned = true;
-    else if (agreement.tenant === userId) agreement.tenantSigned = true;
+    if (agreement.owner.toString() === userId) agreement.ownerSigned = true;
+    else if (agreement.tenant.toString() === userId) agreement.tenantSigned = true;
     else return res.status(403).json({ error: 'User not part of this agreement' });
 
     const savedAgreement = await agreement.save();
