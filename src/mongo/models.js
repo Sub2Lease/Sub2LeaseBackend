@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { geocodeAddress } = require('./geocoding');
+const { geocodeAddress } = require('../geocoding');
 
 const options = {
   strict: true,

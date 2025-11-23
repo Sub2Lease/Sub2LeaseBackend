@@ -99,8 +99,7 @@ router.get('/listings/availability/:id', async (req, res) => {
     const listingStart = new Date(listing.startDate);
     const listingEnd = new Date(listing.endDate);
 
-    if (startDate > endDate) return res.status(400).json({ error: 'startDate must be before endDate' });
-    if (startDate < listingStart || endDate > listingEnd) return respond(false);
+    if (startDate > endDate || startDate < listingStart || endDate > listingEnd) return respond(false);
 
     const overlappingAgreements = await agreements.find({
       listing: listingId,
