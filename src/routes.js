@@ -210,11 +210,11 @@ router.post('/listings', async (req, res) => {
   try {
     const { images: imageFiles } = req.body;
 
-    const imageIds = await Promise.allSettled(imageFiles.map((img) => {
+    const imageIds = await Promise.allSettled(imageFiles.map(async (img) => {
       const imageDoc = new images({
-        data: img.buffer,
-        imageType: img.mimetype,
-        filename: img.originalname
+        data: Buffer.from(await img.arrayBuffer()),
+        imageType: img.type,
+        filename: img.name
       });
       return imageDoc.save();
     })).then(results => results.filter(r => r.status === 'fulfilled').map(r => r.value._id));
