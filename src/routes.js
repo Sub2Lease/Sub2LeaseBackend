@@ -208,7 +208,18 @@ router.post('/signup', async (req, res) => {
 
 router.post('/listings', async (req, res) => {
   try {
-    const newListing = new listings(req.body);
+    const { images: imageFiles } = req.body;
+
+    const imageIds = await Promise.allSettled(imageFiles.map((img) => {
+      const imageDoc = new images({
+        data: img.buffer,
+        imageType: img.mimetype,
+        filename: img.originalname
+      });
+      return imageDoc.save();
+    })).then(results => results.filter(r => r.status === 'fulfilled').map(r => r.value._id));
+
+    const newListing = new listings({...req.body, images: imageIds });
     const savedListing = await newListing.save();
     res.status(201).json(savedListing);
   } catch (err) {
