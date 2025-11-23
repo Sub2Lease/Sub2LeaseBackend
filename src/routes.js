@@ -71,11 +71,12 @@ router.get('/agreements', async (req, res) => {
 
 router.get('/messages', async (req, res) => {
   try {
-    const { from, to } = req.query;
-    if (!from || !to) {
-      return res.status(400).json({ error: 'Both "from" and "to" query parameters are required' });
+    const dbQuery = {}
+    const { user, user2 } = req.query;
+    if (user) {
+      dbQuery.users = user2 ? { $all: [user, user2] } : user;
     }
-    const messagesRes = await messages.find({users: { $all: [from, to] }});
+    const messagesRes = await messages.find(dbQuery);
     res.json(messagesRes);
   } catch (err) {
     res.status(500).json({ error: err.message });
