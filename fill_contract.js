@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("node:fs");
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 
@@ -60,31 +60,31 @@ function signContract(input_path, output_path, isOwner, signature, date) {
 module.exports = { generateContract, signContract };
 
 // EXAMPLE USAGE
-const data = {
-  OWNER_NAME: "John Doe",
-  TENANT_NAME: "Alice Smith",
-  ADDRESS: "123 State St, Madison WI",
-  DATE: "11/22/2025",
-  START_DATE: "01/01/2026",
-  END_DATE: "05/31/2026",
-  RENT: "1100",
-  DEPOSIT: "1100",
-  OWNER_SIGNATURE: "John Doe",
-  TENANT_SIGNATURE: "Alice Smith",
-  OWNER_SIGN_DATE: "11/22/2025",
-  TENANT_SIGN_DATE: "11/22/2025",
-};
+// const data = {
+//   OWNER_NAME: "John Doe",
+//   TENANT_NAME: "Alice Smith",
+//   ADDRESS: "123 State St, Madison WI",
+//   DATE: "11/22/2025",
+//   START_DATE: "01/01/2026",
+//   END_DATE: "05/31/2026",
+//   RENT: "1100",
+//   DEPOSIT: "1100",
+//   OWNER_SIGNATURE: "John Doe",
+//   TENANT_SIGNATURE: "Alice Smith",
+//   OWNER_SIGN_DATE: "11/22/2025",
+//   TENANT_SIGN_DATE: "11/22/2025",
+// };
 
-generateContract(
-  "./templates/Sublease-Agreement-Template.docx",
-  "./templates/Filled-Sublease-Agreement.docx",
-  data
-);
+// generateContract(
+//   "./templates/Sublease-Agreement-Template.docx",
+//   "./temp.docx",
+//   data
+// );
 
-signContract(
-  "./templates/Filled-Sublease-Agreement.docx",
-  "./templates/Filled-Sublease-Agreement.docx",
-  true,
-  data.OWNER_SIGNATURE,
-  data.OWNER_SIGN_DATE
-);
+// signContract(
+//   "./templates/Filled-Sublease-Agreement.docx",
+//   "./templates/Filled-Sublease-Agreement.docx",
+//   true,
+//   data.OWNER_SIGNATURE,
+//   data.OWNER_SIGN_DATE
+// );

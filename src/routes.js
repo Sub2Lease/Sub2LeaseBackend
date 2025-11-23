@@ -4,6 +4,10 @@ const { users, listings, agreements, messages, images } = require('./mongo/model
 const mongoose = require('mongoose');
 const { geocodeAddress } = require('./geocoding');
 const multer = require("multer");
+const { generateContract } = require("../fill_contract");
+const docxConverter = require("docx-pdf");
+const path = require("node:path");
+const fs = require("node:fs");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -25,7 +29,7 @@ router.get('/users', async (req, res) => {
     const dbQuery = {};
     if (query.userId) dbQuery._id = query.userId;
 
-    const usersRes = await users.find(dbQuery).lean(); // omit passwords
+    const usersRes = await users.find(dbQuery);
     res.json(usersRes);
   } catch (err) {
     res.status(500).json(debugError(err));
@@ -46,7 +50,7 @@ router.get('/listings', async (req, res) => {
       }
     }
 
-    const listingsRes = await listings.find(dbQuery).lean();
+    const listingsRes = await listings.find(dbQuery);
     res.json(listingsRes);
   } catch (err) {
     res.status(500).json(debugError(err));
@@ -57,7 +61,7 @@ router.get('/listings/saved/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    const user = await users.findById(userId).select('savedListings').populate('savedListings').lean();
+    const user = await users.findById(userId).select('savedListings').populate('savedListings');
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user.savedListings);
   } catch (err) {
@@ -67,15 +71,19 @@ router.get('/listings/saved/:userId', async (req, res) => {
 
 router.get('/agreements', async (req, res) => {
   try {
+    let populate = '';
     const { query } = req;
     const dbQuery = {};
     if (query.agreementId) dbQuery._id = query.agreementId;
     else {
       if (query.ownerId) dbQuery.owner = query.ownerId;
       if (query.tenantId) dbQuery.tenant = query.tenantId;
+      if (query.populateListing) populate += ' listing';
+      if (query.populateOwner) populate += ' owner';
+      if (query.populateTenant) populate += ' tenant';
     }
 
-    const agreementsRes = await agreements.find(dbQuery).lean();
+    const agreementsRes = await agreements.find(dbQuery).populate(populate.trim());
     res.json(agreementsRes);
   } catch (err) {
     res.status(500).json(debugError(err));
@@ -89,7 +97,7 @@ router.get('/messages', async (req, res) => {
     if (user) {
       dbQuery.users = user2 ? { $all: [user, user2] } : user;
     }
-    const messagesRes = await messages.find(dbQuery).lean();
+    const messagesRes = await messages.find(dbQuery);
     res.json(messagesRes);
   } catch (err) {
     res.status(500).json(debugError(err));
@@ -104,7 +112,7 @@ router.get('/listings/availability/:id', async (req, res) => {
     if (!startDateRaw || !endDateRaw) {
       return res.status(400).json({ error: 'Please provide both startDate and endDate query parameters' });
     }
-    const listing = await listings.findById(listingId).select('startDate endDate').lean();
+    const listing = await listings.findById(listingId).select('startDate endDate');
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
 
     const startDate = new Date(startDateRaw);
@@ -121,7 +129,7 @@ router.get('/listings/availability/:id', async (req, res) => {
         { endDate: { $lte: endDate, $gte: startDate } },
         { startDate: { $lte: startDate }, endDate: { $gte: endDate } }
       ]
-    }).lean();
+    });
 
     respond(overlappingAgreements.length === 0);
   } catch (err) {
@@ -136,6 +144,49 @@ router.get('/images/:imageId', async (req, res) => {
     if (!image) return res.status(404).json({ error: 'Image does not exist' });
     res.set('Content-Type', image.imageType);
     res.send(image.data);
+  } catch (err) {
+    res.status(500).json(debugError(err));
+  }
+});
+
+router.get('/agreements/:agreementId/contract', async (req, res) => {
+  try {
+    const { agreementId } = req.params;
+    const agreement = await agreements.findById(agreementId).populate('listing owner tenant');
+    if (!agreement) return res.status(404).json({ error: 'Agreement not found' });
+    
+    const now = new Date().toLocaleDateString('en-US');
+
+    const docFilepath = path.resolve('./temp.docx');
+    const pdfFilepath = path.resolve('./temp.pdf');
+    const templatePath = './templates/Sublease-Agreement-Template.docx';
+    const downloadName = `contract-${now.replaceAll('/', '-')}-${agreementId}.pdf`;
+    console.log("CWD:", process.cwd());
+  
+    const contractData = {
+      OWNER_NAME: agreement.owner.name || "aaa",
+      TENANT_NAME: agreement.tenant.name || "aaa",
+      ADDRESS: agreement.listing.address || "aaa",
+      DATE: now || "aaa",
+      START_DATE: new Date(agreement.startDate).toLocaleDateString('en-US') || "aaa",
+      END_DATE: new Date(agreement.endDate).toLocaleDateString('en-US') || "aaa",
+      RENT: agreement.rent || "aaa",
+      DEPOSIT: agreement.securityDeposit || "aaa",
+      OWNER_SIGNATURE: agreement.ownerSigned ? agreement.owner.name : "{OWNER_SIGNATURE}" || "aaa",
+      OWNER_SIGN_DATE: agreement.ownerSigned ? new Date(agreement.ownerSignDate).toLocaleDateString('en-US') : "{OWNER_SIGN_DATE}",
+      TENANT_SIGNATURE: agreement.tenantSigned ? agreement.tenant.name : "{TENANT_SIGNATURE}" || "aaa",
+      TENANT_SIGN_DATE: agreement.tenantSigned ? new Date(agreement.tenantSignDate).toLocaleDateString('en-US') : "{TENANT_SIGN_DATE}",
+    };
+
+    generateContract(templatePath, docFilepath, contractData);
+    docxConverter(docFilepath, pdfFilepath, async function(err) {
+      await waitForFile(pdfFilepath);
+      if (err) throw err;
+    });
+
+    res.download(pdfFilepath, downloadName, (err) => {
+      if (err) throw err;
+    });
   } catch (err) {
     res.status(500).json(debugError(err));
   }
@@ -173,7 +224,7 @@ router.post('/listings/:listingId/makeAgreement', async (req, res) => {
     if (!startDate || !endDate || !tenant || !owner || !numPeople)
       return res.status(400).json({ error: 'Missing some required fields (startDate, endDate, tenant, owner, numPeople)' });
 
-    const listing = await listings.findById(listingId).lean();
+    const listing = await listings.findById(listingId);
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
 
     if (!securityDeposit && !listing.securityDeposit) return res.status(400).json({ error: 'Must specify securityDeposit for this listing' });
@@ -240,11 +291,12 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
   try {
     const { userId } = req.body;
     const { agreementId } = req.params;
-    const agreement = await agreements.findById(agreementId).select('owner tenant ownerSigned tenantSigned');
+    const agreement = await agreements.findById(agreementId).select('owner tenant ownerSignDate tenantSignDate');
     if (!agreement) return res.status(404).json({ error: 'Agreement not found' });
 
-    if (agreement.owner.toString() === userId) agreement.ownerSigned = true;
-    else if (agreement.tenant.toString() === userId) agreement.tenantSigned = true;
+    const now = new Date();
+    if (agreement.owner.toString() === userId) agreement.ownerSignDate = now;
+    else if (agreement.tenant.toString() === userId) agreement.tenantSignDate = now;
     else return res.status(403).json({ error: 'User not part of this agreement' });
 
     const savedAgreement = await agreement.save();

@@ -3,6 +3,8 @@ const { geocodeAddress } = require('../geocoding');
 
 const options = {
   strict: true,
+  toJSON: { virtuals: true, versionKey: false },
+  toObject: { virtuals: true, versionKey: false },
 };
 
 const finds = ['find', 'findOne', 'findAndUpdate', 'findOneAndUpdate', 'findById', 'findByIdAndUpdate', 'findByIdAndDelete'];
@@ -22,7 +24,7 @@ function stripSensitiveFields(docs) {
 const userSchema = new mongoose.Schema({
   name: { type: String, index: true, required: true },
   email: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   walletAddress: String,
   zipcode: String,
   // listings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
@@ -70,9 +72,9 @@ const agreementSchema = new mongoose.Schema({
   payTerm: { type: String, default: () => 'monthly' },
   listing: { type: mongoose.Schema.Types.ObjectId, ref: 'listings', required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
-  ownerSigned: { type: Boolean, default: () => false },
+  ownerSignDate: { type: Date, default: () => null },
   tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
-  tenantSigned: { type: Boolean, default: () => false },
+  tenantSignDate: { type: Date, default: () => null },
 }, options);
 agreementSchema.path('endDate').validate(function(value) {
   if (!this.startDate || !value) return false;
@@ -81,6 +83,12 @@ agreementSchema.path('endDate').validate(function(value) {
 agreementSchema.index({ listing: 1, startDate: 1, endDate: 1 });
 agreementSchema.index({ owner: 1 });
 agreementSchema.index({ startDate: 1, endDate: 1 });
+agreementSchema.virtual('ownerSigned').get(function () {
+  return !!this.ownerSignDate;
+});
+agreementSchema.virtual('tenantSigned').get(function () {
+  return !!this.tenantSignDate;
+});
 
 const imageSchema = new mongoose.Schema({
   data: { type: Buffer, required: true },
