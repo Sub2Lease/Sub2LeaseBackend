@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
   // listings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
   // agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   savedListings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
-  pfpImage: { type: mongoose.Schema.Types.ObjectId, ref: 'images' },
+  profileImage: { type: mongoose.Schema.Types.ObjectId, ref: 'images' },
 }, options);
 
 const listingSchema = new mongoose.Schema({

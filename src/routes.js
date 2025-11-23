@@ -261,7 +261,7 @@ router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res)
     });
 
     const uploadedImage = await imageDoc.save();
-    user.pfpImage = uploadedImage._id;
+    user.profileImage = uploadedImage._id;
     await user.save();
 
     res.json(uploadedImage);
