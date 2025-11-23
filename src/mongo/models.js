@@ -7,6 +7,9 @@ const options = {
       if (!options.keepVersion) {
         delete ret.__v;
       }
+      if (!options.keepPassword) {
+        delete ret.password;
+      }
       return ret;
     }
   },
@@ -14,6 +17,9 @@ const options = {
     transform(_, ret, options) {
       if (!options.keepVersion) {
         delete ret.__v;
+      }
+      if (!options.keepPassword) {
+        delete ret.password;
       }
       return ret;
     }

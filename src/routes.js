@@ -59,10 +59,6 @@ router.get('/agreements', async (req, res) => {
   }
 });
 
-router.get("*", (_, res) => {
-  res.send("Yo this is the fallback ur lowk cooked");
-});
-
 //////////////////////////
 // POST
 //////////////////////////
@@ -119,14 +115,10 @@ router.post('/listings/:id/accept', async (req, res) => {
   }
 });
 
-router.all("*catch", (_, res) => {
-  res.send("Yo this is the fallback ur lowk cooked");
-});
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await users.findOne({ email, password }).select('-password');
+    const user = await users.findOne({ email, password });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -136,6 +128,10 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.all("*catch", (_, res) => {
+  res.send("Yo this is the fallback ur lowk cooked");
 });
 
 module.exports = router;
