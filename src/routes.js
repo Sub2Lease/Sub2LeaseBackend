@@ -330,7 +330,7 @@ router.post('/listings/:listingId/uploadImage', upload.single('image'), async (r
 router.patch("/fillEmptyGeocodes", async (req, res) => {
   const docs = await listings.find({ latitude: { $exists: false } });
 
-  await Promise.all(
+  const results = await Promise.allSettled(
     docs.map(async doc => {
       const geo = await geocodeAddress(doc.address);
       if (!geo) return;
@@ -341,7 +341,7 @@ router.patch("/fillEmptyGeocodes", async (req, res) => {
     })
   );
 
-  res.json({ updated: docs.length });;
+  res.json({ results });
 });
 
 //////////////////////////
