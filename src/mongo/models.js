@@ -52,6 +52,7 @@ const listingSchema = new mongoose.Schema({
   images: { type: [Buffer], default: () => [] },
   capacity: { type: Number, required: true },
 }, options);
+listingSchema.index({ startDate: 1, endDate: 1 });
 
 const agreementSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
@@ -65,16 +66,30 @@ const agreementSchema = new mongoose.Schema({
   tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
 }, options);
 
+const messageSchema = new mongoose.Schema({
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  users: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'users',
+    required: true,
+    validate: [v => v.length === 2, 'A message must be between two users']
+  },
+  content: { type: String, required: true },
+}, {...options, timestamps: { createdAt: 'timestamp', updatedAt: false } });
+messageSchema.index({ users: 1, timestamp: -1 });
+
 const globalSchema = new mongoose.Schema({}, { strict: false });
 
 const User = mongoose.models.User || mongoose.model('users', userSchema);
 const Listing = mongoose.models.Listing || mongoose.model('listings', listingSchema);
 const Agreement = mongoose.models.Agreement || mongoose.model('agreements', agreementSchema);
+const Message = mongoose.models.Message || mongoose.model('messages', messageSchema);
 const Global = mongoose.models.Global || mongoose.model('globals', globalSchema);
 
 module.exports = {
   users: User,
   listings: Listing,
   agreements: Agreement,
+  messages: Message,
   global: Global
-}
+};

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { users, listings, agreements } = require('./mongo/models');
+const { users, listings, agreements, messages } = require('./mongo/models');
 
 //////////////////////////
 // GET
@@ -8,10 +8,11 @@ const { users, listings, agreements } = require('./mongo/models');
 
 router.get('/users', async (req, res) => {
   try {
-    const query = {};
-    if (req.query.userId) query._id = req.query.userId;
+    const { query } = req;
+    const dbQuery = {};
+    if (query.userId) dbQuery._id = query.userId;
 
-    const usersRes = await users.find(query).select('-password'); // omit passwords
+    const usersRes = await users.find(dbQuery).select('-password'); // omit passwords
     res.json(usersRes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -20,11 +21,19 @@ router.get('/users', async (req, res) => {
 
 router.get('/listings', async (req, res) => {
   try {
-    const query = {};
-    if (req.query.listingId) query._id = req.query.listingId;
-    else if (req.query.ownerId) query.owner = req.query.ownerId;
+    const { query } = req;
+    const dbQuery = {};
+    if (query.listingId) dbQuery._id = query.listingId;
+    else {
+      if (query.ownerId) dbQuery.owner = query.ownerId;
 
-    const listingsRes = await listings.find(query);
+      if (query.startDate && query.endDate) {
+        dbQuery.startDate = { $gte: new Date(query.startDate) };
+        dbQuery.endDate = { $lte: new Date(query.endDate) };
+      }
+    }
+
+    const listingsRes = await listings.find(dbQuery);
     res.json(listingsRes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -45,15 +54,29 @@ router.get('/listings/saved/:id', async (req, res) => {
 
 router.get('/agreements', async (req, res) => {
   try {
-    const query = {};
-    if (req.query.agreementId) query._id = req.query.agreementId;
+    const { query } = req;
+    const dbQuery = {};
+    if (query.agreementId) dbQuery._id = query.agreementId;
     else {
-      if (req.query.ownerId) query.owner = req.query.ownerId;
-      if (req.query.tenantId) query.tenant = req.query.tenantId;
+      if (query.ownerId) dbQuery.owner = query.ownerId;
+      if (query.tenantId) dbQuery.tenant = query.tenantId;
     }
 
-    const agreementsRes = await agreements.find(query);
+    const agreementsRes = await agreements.find(dbQuery);
     res.json(agreementsRes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/messages', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ error: 'Both "from" and "to" query parameters are required' });
+    }
+    const messagesRes = await messages.find({users: { $all: [from, to] }});
+    res.json(messagesRes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -125,6 +148,29 @@ router.post('/login', async (req, res) => {
     } else {
       return res.json(user);
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/listings/save', async (req, res) => {
+  try {
+    const { userId, listingId } = req.body; 
+    const savedUser = await users.findByIdAndUpdate(userId, { $addToSet: { savedListings: listingId } }, { new: true });
+    res.status(201).json(savedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/message', async (req, res) => {
+  try {
+    const { from, to, content } = req.body;
+
+    const newMessage = new messages({ sender: from, users: [from, to], content });
+    
+    const savedMessage = await newMessage.save();
+    res.status(201).json(savedMessage);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
