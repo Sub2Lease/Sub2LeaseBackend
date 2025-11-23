@@ -18,11 +18,14 @@
     "start": "node start.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "docx-templates": "^4.14.1",
     "docxtemplater": "^3.67.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "pdf-parse": "^2.4.5",
     "pizzip": "^3.2.0"
   },
   "devDependencies": {
