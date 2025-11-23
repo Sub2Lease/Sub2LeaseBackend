@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { users, listings, agreements, messages } = require('./mongo/models');
+const { users, listings, agreements, messages, images } = require('./mongo/models');
 const { geocodeAddress } = require('./geocoding');
+const multer = require("multer");
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 //////////////////////////
 // GET
@@ -41,9 +45,9 @@ router.get('/listings', async (req, res) => {
   }
 });
 
-router.get('/listings/saved/:id', async (req, res) => {
+router.get('/listings/saved/:userId', async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = req.params.userId;
 
     const user = await users.findById(userId).select('savedListings').populate('savedListings').lean();
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -117,6 +121,18 @@ router.get('/listings/availability/:id', async (req, res) => {
   }
 });
 
+router.get('/images/:imageId', async (req, res) => {
+  try {
+    const { imageId } = req.params;
+    const image = await images.findById(imageId);
+    if (!image) return res.status(404).send('Not found');
+    res.set('Content-Type', image.imageType);
+    res.send(image.data);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 //////////////////////////
 // POST
 //////////////////////////
@@ -149,7 +165,7 @@ router.post('/listings/:listingId/makeAgreement', async (req, res) => {
     if (!startDate || !endDate || !tenant || !owner || !numPeople)
       return res.status(400).json({ error: 'Missing some required fields (startDate, endDate, tenant, owner, numPeople)' });
 
-    const listing = await listings.findById(listingId);
+    const listing = await listings.findById(listingId).lean();
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
 
     if (!securityDeposit && !listing.securityDeposit) return res.status(400).json({ error: 'Must specify securityDeposit for this listing' });
@@ -229,6 +245,54 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    
+    const { userId } = req.params;
+    const user = await users.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const imageDoc = new images({
+      data: req.file.buffer,
+      imageType: req.file.mimetype,
+      filename: req.file.originalname
+    });
+
+    const uploadedImage = await imageDoc.save();
+    user.profileImage = uploadedImage._id;
+    await user.save();
+
+    res.json(uploadedImage);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+})
+
+router.post('/listings/:listingId/uploadImage', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    
+    const { listingId } = req.params;
+    const listing = await listings.findById(listingId);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+    const imageDoc = new images({
+      data: req.file.buffer,
+      imageType: req.file.mimetype,
+      filename: req.file.originalname
+    });
+
+    const uploadedImage = await imageDoc.save();
+    listing.images.push(uploadedImage._id);
+    await listing.save();
+
+    res.json(uploadedImage);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+})
 
 //////////////////////////
 // PATCH

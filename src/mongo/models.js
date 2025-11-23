@@ -3,29 +3,21 @@ const { geocodeAddress } = require('../geocoding');
 
 const options = {
   strict: true,
-  toJSON: {
-    transform(_, ret, options) {
-      if (!options.keepVersion) {
-        delete ret.__v;
-      }
-      if (!options.keepPassword) {
-        delete ret.password;
-      }
-      return ret;
-    }
-  },
-  toObject: {
-    transform(_, ret, options) {
-      if (!options.keepVersion) {
-        delete ret.__v;
-      }
-      if (!options.keepPassword) {
-        delete ret.password;
-      }
-      return ret;
-    }
-  }
 };
+
+const finds = ['find', 'findOne', 'findAndUpdate', 'findOneAndUpdate', 'findById', 'findByIdAndUpdate', 'findByIdAndDelete'];
+function stripSensitiveFields(docs) {
+  if (!docs) return;
+  if (Array.isArray(docs)) {
+    docs.forEach(doc => {
+      delete doc.password;
+      delete doc.__v;
+    });
+  } else {
+    delete docs.password;
+    delete docs.__v;
+  }
+}
 
 const userSchema = new mongoose.Schema({
   name: { type: String, index: true, required: true },
@@ -36,7 +28,7 @@ const userSchema = new mongoose.Schema({
   // listings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
   // agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   savedListings: { type: [mongoose.Schema.Types.ObjectId], ref: 'listings', default: () => [] },
-  profileImg: Buffer
+  profileImage: { type: mongoose.Schema.Types.ObjectId, ref: 'images' },
 }, options);
 
 const listingSchema = new mongoose.Schema({
@@ -52,7 +44,7 @@ const listingSchema = new mongoose.Schema({
   website: String,
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
   agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
-  images: { type: [Buffer], default: () => [] },
+  images: { type: [mongoose.Schema.Types.ObjectId], ref: 'images', default: () => [] },
   capacity: { type: Number, required: true },
 }, options);
 listingSchema.path('endDate').validate(function(value) {
@@ -90,6 +82,12 @@ agreementSchema.index({ listing: 1, startDate: 1, endDate: 1 });
 agreementSchema.index({ owner: 1 });
 agreementSchema.index({ startDate: 1, endDate: 1 });
 
+const imageSchema = new mongoose.Schema({
+  data: { type: Buffer, required: true },
+  imageType: { type: String, required: true },
+  filename: String,
+}, options);
+
 const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
   users: {
@@ -104,9 +102,19 @@ messageSchema.index({ users: 1, timestamp: -1 });
 
 const globalSchema = new mongoose.Schema({}, { strict: false });
 
+[userSchema, listingSchema, agreementSchema, imageSchema, messageSchema].forEach((schema) => {
+  finds.forEach((find) => {
+    schema.post(find, function(docs) {
+      if (this.options.keepSensitive) return;
+      stripSensitiveFields(docs);
+    });
+  });
+});
+
 const User = mongoose.models.User || mongoose.model('users', userSchema);
 const Listing = mongoose.models.Listing || mongoose.model('listings', listingSchema);
 const Agreement = mongoose.models.Agreement || mongoose.model('agreements', agreementSchema);
+const Image = mongoose.models.Image || mongoose.model('images', imageSchema);
 const Message = mongoose.models.Message || mongoose.model('messages', messageSchema);
 const Global = mongoose.models.Global || mongoose.model('globals', globalSchema);
 
@@ -114,6 +122,7 @@ module.exports = {
   users: User,
   listings: Listing,
   agreements: Agreement,
+  images: Image,
   messages: Message,
   global: Global
 };
