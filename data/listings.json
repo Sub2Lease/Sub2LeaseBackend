@@ -1,0 +1,17 @@
+[
+  {
+    "_id": { "$oid": "64b1b2c3d4e5f67890123457" },
+    "description": "Cozy 1BR near campus",
+    "address": "123 College Ave",
+    "title": "1BR near campus",
+    "rent": 1200,
+    "securityDeposit": 600,
+    "startDate": { "$date": "2026-01-01T00:00:00Z" },
+    "endDate": { "$date": "2026-06-01T00:00:00Z" },
+    "website": "http://example.com",
+    "owner": { "$oid": "64a1b2c3d4e5f67890123456" },
+    "agreements": [],
+    "images": [],
+    "capacity": 1
+  }
+]
