@@ -8,6 +8,13 @@ const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+const debugError = (err) => ({
+  error: err.message,
+  stack: err.stack,
+  name: err.name,
+  code: err.code,
+});
+
 //////////////////////////
 // GET
 //////////////////////////
@@ -21,7 +28,7 @@ router.get('/users', async (req, res) => {
     const usersRes = await users.find(dbQuery).lean(); // omit passwords
     res.json(usersRes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -42,7 +49,7 @@ router.get('/listings', async (req, res) => {
     const listingsRes = await listings.find(dbQuery).lean();
     res.json(listingsRes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -54,7 +61,7 @@ router.get('/listings/saved/:userId', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user.savedListings);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -71,7 +78,7 @@ router.get('/agreements', async (req, res) => {
     const agreementsRes = await agreements.find(dbQuery).lean();
     res.json(agreementsRes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -85,7 +92,7 @@ router.get('/messages', async (req, res) => {
     const messagesRes = await messages.find(dbQuery).lean();
     res.json(messagesRes);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -118,7 +125,7 @@ router.get('/listings/availability/:id', async (req, res) => {
 
     respond(overlappingAgreements.length === 0);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -126,11 +133,11 @@ router.get('/images/:imageId', async (req, res) => {
   try {
     const { imageId } = req.params;
     const image = await images.findById(imageId);
-    if (!image) return res.status(404).send('Not found');
+    if (!image) return res.status(404).json({ error: 'Image does not exist' });
     res.set('Content-Type', image.imageType);
     res.send(image.data);
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -144,7 +151,7 @@ router.post('/signup', async (req, res) => {
     const savedUser = await newUser.save();
     res.status(201).json(savedUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -154,7 +161,7 @@ router.post('/listings', async (req, res) => {
     const savedListing = await newListing.save();
     res.status(201).json(savedListing);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -186,7 +193,7 @@ router.post('/listings/:listingId/makeAgreement', async (req, res) => {
     const savedAgreement = await newAgreement.save();
     res.status(201).json(savedAgreement);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -201,7 +208,7 @@ router.post('/login', async (req, res) => {
       return res.json(user);
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -212,7 +219,7 @@ router.post('/listings/:listingId/save', async (req, res) => {
     const savedUser = await users.findByIdAndUpdate(userId, { $addToSet: { savedListings: listingId } }, { new: true });
     res.status(201).json(savedUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -225,7 +232,7 @@ router.post('/message', async (req, res) => {
     const savedMessage = await newMessage.save();
     res.status(201).json(savedMessage);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -243,7 +250,7 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
     const savedAgreement = await agreement.save();
     res.json(savedAgreement);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -254,7 +261,6 @@ router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res)
   session.startTransaction();
 
   try {
-    console.log("1");
     const { userId } = req.params;
 
     const user = await users
@@ -266,7 +272,7 @@ router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res)
       session.endSession();
       return res.status(404).json({ error: "User not found" });
     }
-    console.log("2");
+
     const imageDoc = new images({
       data: req.file.buffer,
       imageType: req.file.mimetype,
@@ -274,14 +280,14 @@ router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res)
     });
 
     const uploadedImage = await imageDoc.save({ session });
-    console.log("3");
+
     if (user.profileImage) {
       await images.findByIdAndDelete(user.profileImage).session(session);
     }
 
     user.profileImage = uploadedImage._id;
     await user.save({ session });
-    console.log("4");
+
     await session.commitTransaction();
     session.endSession();
 
@@ -289,12 +295,7 @@ router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res)
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    res.status(500).json({
-      error: err.message,
-      stack: err.stack,
-      name: err.name,
-      code: err.code,
-  });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -318,7 +319,7 @@ router.post('/listings/:listingId/uploadImage', upload.single('image'), async (r
 
     res.json(uploadedImage);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 })
 
@@ -354,7 +355,7 @@ router.delete('/listings/:listingId/save', async (req, res) => {
     const savedUser = await users.findByIdAndUpdate(userId, { $pull: { savedListings: listingId } }, { new: true });
     res.status(201).json(savedUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -365,7 +366,7 @@ router.delete('/agreements/:agreementId', async (req, res) => {
     if (!deletedAgreement) return res.status(404).json({ error: 'Agreement not found' });
     res.json(deletedAgreement);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -376,7 +377,7 @@ router.delete('/listings/:listingId', async (req, res) => {
     if (!deletedListing) return res.status(404).json({ error: 'Listing not found' });
     res.json(deletedListing);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
@@ -387,7 +388,7 @@ router.delete('/users/:userId', async (req, res) => {
     if (!deletedUser) return res.status(404).json({ error: 'User not found' });
     res.json(deletedUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json(debugError(err));
   }
 });
 
