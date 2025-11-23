@@ -26,6 +26,7 @@
     "docxtemplater": "^3.67.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "libreoffice-convert": "^1.7.0",
     "multer": "^2.0.2",
     "pdf-parse": "^2.4.5",
     "pizzip": "^3.2.0"
