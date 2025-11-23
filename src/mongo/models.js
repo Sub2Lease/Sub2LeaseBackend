@@ -55,6 +55,10 @@ const listingSchema = new mongoose.Schema({
   images: { type: [Buffer], default: () => [] },
   capacity: { type: Number, required: true },
 }, options);
+listingSchema.path('endDate').validate(function(value) {
+  if (!this.startDate || !value) return false;
+  return value > this.startDate;
+}, 'End date must be after start');
 listingSchema.pre('save', async function() {
   if (!this.isNew) return;
   const geo = await geocodeAddress(this.address);
@@ -78,6 +82,10 @@ const agreementSchema = new mongoose.Schema({
   tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
   tenantSigned: { type: Boolean, default: () => false },
 }, options);
+agreementSchema.path('endDate').validate(function(value) {
+  if (!this.startDate || !value) return false;
+  return value > this.startDate;
+}, 'End date must be after start');
 agreementSchema.index({ listing: 1, startDate: 1, endDate: 1 });
 agreementSchema.index({ owner: 1 });
 agreementSchema.index({ startDate: 1, endDate: 1 });

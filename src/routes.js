@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { users, listings, agreements, messages } = require('./mongo/models');
+const { geocodeAddress } = require('./geocoding');
 
 //////////////////////////
 // GET
@@ -198,17 +199,6 @@ router.post('/listings/:listingId/save', async (req, res) => {
   }
 });
 
-router.delete('/listings/:listingId/save', async (req, res) => {
-  try {
-    const { userId } = req.body; 
-    const { listingId } = req.params;
-    const savedUser = await users.findByIdAndUpdate(userId, { $pull: { savedListings: listingId } }, { new: true });
-    res.status(201).json(savedUser);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 router.post('/message', async (req, res) => {
   try {
     const { from, to, content } = req.body;
@@ -259,7 +249,55 @@ router.patch("/fillEmptyGeocodes", async (req, res) => {
   );
 
   res.json({ updated: docs.length });;
-})
+});
+
+//////////////////////////
+// DELETE
+//////////////////////////
+
+router.delete('/listings/:listingId/save', async (req, res) => {
+  try {
+    const { userId } = req.body; 
+    const { listingId } = req.params;
+    const savedUser = await users.findByIdAndUpdate(userId, { $pull: { savedListings: listingId } }, { new: true });
+    res.status(201).json(savedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/agreements/:agreementId', async (req, res) => {
+  try {
+    const { agreementId } = req.params;
+    const deletedAgreement = await agreements.findByIdAndDelete(agreementId);
+    if (!deletedAgreement) return res.status(404).json({ error: 'Agreement not found' });
+    res.json(deletedAgreement);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/listings/:listingId', async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const deletedListing = await listings.findByIdAndDelete(listingId);
+    if (!deletedListing) return res.status(404).json({ error: 'Listing not found' });
+    res.json(deletedListing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const deletedUser = await users.findByIdAndDelete(userId);
+    if (!deletedUser) return res.status(404).json({ error: 'User not found' });
+    res.json(deletedUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.all("*catch", (_, res) => {
   res.status(404).send("Yo this is the fallback ur lowk cooked");
