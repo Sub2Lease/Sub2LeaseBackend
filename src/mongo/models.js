@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { geocodeAddress } = require('./geocoding');
 
 const options = {
   strict: true,
@@ -39,9 +40,11 @@ const userSchema = new mongoose.Schema({
 }, options);
 
 const listingSchema = new mongoose.Schema({
+  title: { type: String, required: true },
   description: String,
   address: { type: String, required: true },
-  title: { type: String, required: true },
+  longitude: Number,
+  latitude: Number,
   rent: { type: Number, required: true },
   securityDeposit: Number,
   startDate: { type: Date, required: true },
@@ -52,7 +55,15 @@ const listingSchema = new mongoose.Schema({
   images: { type: [Buffer], default: () => [] },
   capacity: { type: Number, required: true },
 }, options);
+listingSchema.pre('save', async function() {
+  if (!this.isNew) return;
+  const geo = await geocodeAddress(this.address);
+  if (!geo) return;
+  this.longitude = geo.lng;
+  this.latitude = geo.lat;
+});
 listingSchema.index({ startDate: 1, endDate: 1 });
+listingSchema.index({ owner: 1 });
 
 const agreementSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
@@ -63,8 +74,13 @@ const agreementSchema = new mongoose.Schema({
   payTerm: { type: String, default: () => 'monthly' },
   listing: { type: mongoose.Schema.Types.ObjectId, ref: 'listings', required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  ownerSigned: { type: Boolean, default: () => false },
   tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  tenantSigned: { type: Boolean, default: () => false },
 }, options);
+agreementSchema.index({ listing: 1, startDate: 1, endDate: 1 });
+agreementSchema.index({ owner: 1 });
+agreementSchema.index({ startDate: 1, endDate: 1 });
 
 const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
