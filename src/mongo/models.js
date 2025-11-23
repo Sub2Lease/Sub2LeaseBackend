@@ -45,6 +45,7 @@ const listingSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   website: String,
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+  amenities: { type: [String], default: () => [] },
   agreements: { type: [mongoose.Schema.Types.ObjectId], ref: 'agreements', default: () => [] },
   images: { type: [mongoose.Schema.Types.ObjectId], ref: 'images', default: () => [] },
   capacity: { type: Number, required: true },
