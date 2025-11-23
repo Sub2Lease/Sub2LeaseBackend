@@ -5,9 +5,8 @@ const mongoose = require('mongoose');
 const { geocodeAddress } = require('./geocoding');
 const multer = require("multer");
 const { generateContract } = require("../fill_contract");
-const docxConverter = require("docx-pdf");
+const { convertDocxToPdf } = require("./docxToPdf");
 const path = require("node:path");
-const fs = require("node:fs");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -179,10 +178,7 @@ router.get('/agreements/:agreementId/contract', async (req, res) => {
     };
 
     generateContract(templatePath, docFilepath, contractData);
-    docxConverter(docFilepath, pdfFilepath, async function(err) {
-      await waitForFile(pdfFilepath);
-      if (err) throw err;
-    });
+    await convertDocxToPdf(docFilepath, pdfFilepath);
 
     res.download(pdfFilepath, downloadName, (err) => {
       if (err) throw err;

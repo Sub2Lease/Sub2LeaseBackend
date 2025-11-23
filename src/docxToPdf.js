@@ -6,7 +6,6 @@ function convertDocxToPdf(docPath, pdfPath) {
     docxConverter(docPath, pdfPath, (err) => {
       if (err) return reject(err);
 
-      // Wait until PDF actually exists
       const start = Date.now();
       const check = () => {
         if (fs.existsSync(pdfPath)) return resolve();
