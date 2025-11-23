@@ -247,49 +247,32 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
 });
 
 router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    
     const { userId } = req.params;
-
-    const user = await users
-      .findById(userId)
-      .session(session);
-
-    if (!user) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ error: "User not found" });
-    }
+    const user = await users.findById(userId).populate('profileImage');
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     const imageDoc = new images({
       data: req.file.buffer,
       imageType: req.file.mimetype,
-      filename: req.file.originalname,
+      filename: req.file.originalname
     });
 
-    const uploadedImage = await imageDoc.save({ session });
-
     if (user.profileImage) {
-      await images.findByIdAndDelete(user.profileImage).session(session);
+      await images.findByIdAndDelete(user.profileImage._id);
     }
 
+    const uploadedImage = await imageDoc.save();
     user.profileImage = uploadedImage._id;
-    await user.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
+    await user.save();
 
     res.json(uploadedImage);
   } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
     res.status(500).json({ error: err.message });
   }
-});
+})
 
 router.post('/listings/:listingId/uploadImage', upload.single('image'), async (req, res) => {
   try {
