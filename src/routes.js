@@ -202,6 +202,17 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+router.post('/users/:userId/update', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const updateData = req.body;
+    const updatedUser = await users.findByIdAndUpdate(userId, updateData, { new: true });
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    res.status(500).json(debugError(err));
+  }
+});
+
 router.post('/listings', upload.array('images'), async (req, res) => {
   try {
     const imageFiles = req.files; 
