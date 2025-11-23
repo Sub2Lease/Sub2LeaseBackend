@@ -23,7 +23,8 @@
     "docxtemplater": "^3.67.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "pizzip": "^3.2.0"
+    "pizzip": "^3.2.0",
+    "multer": "^2.0.2"
   },
   "devDependencies": {
     "@types/mongoose": "^5.11.96"
