@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { geocodeAddress } = require('./geocoding');
 const multer = require("multer");
 const { generateContract, doc_to_pdf } = require("../fill_contract");
+const { analyzeLeaseGemini } = require('../check_lease');
 const path = require("node:path");
 
 const storage = multer.memoryStorage();
@@ -266,6 +267,22 @@ router.post('/listings/:listingId/makeAgreement', async (req, res) => {
     res.status(201).json(savedAgreement);
   } catch (err) {
     res.status(500).json(debugError(err));
+  }
+});
+
+// Accept file upload (multipart/form-data) with field name `file` and pass raw bytes
+router.post('/listings/check_lease', upload.single('file'), async (req, res) => {
+  try {
+    // prefer raw uploaded file buffer
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'Missing file upload. Send multipart/form-data with field `file`.' });
+    }
+    const pdfBytes = req.file.buffer;
+    const analysis = await analyzeLeaseGemini(pdfBytes);
+    return res.json(analysis);
+  } catch (err) {
+    console.error('check_lease error:', err);
+    return res.status(500).json(debugError(err));
   }
 });
 
