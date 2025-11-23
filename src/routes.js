@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { users, listings, agreements, messages, images } = require('./mongo/models');
+const mongoose = require('mongoose');
 const { geocodeAddress } = require('./geocoding');
 const multer = require("multer");
 
@@ -247,32 +248,55 @@ router.post('/agreements/:agreementId/sign', async (req, res) => {
 });
 
 router.post('/users/:userId/uploadPFP', upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    
-    const { userId } = req.params;
-    const user = await users.findById(userId).populate('profileImage');
-    if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    console.log("1");
+    const { userId } = req.params;
+
+    const user = await users
+      .findById(userId)
+      .session(session);
+
+    if (!user) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("2");
     const imageDoc = new images({
       data: req.file.buffer,
       imageType: req.file.mimetype,
-      filename: req.file.originalname
+      filename: req.file.originalname,
     });
 
+    const uploadedImage = await imageDoc.save({ session });
+    console.log("3");
     if (user.profileImage) {
-      await images.findByIdAndDelete(user.profileImage._id);
+      await images.findByIdAndDelete(user.profileImage).session(session);
     }
 
-    const uploadedImage = await imageDoc.save();
     user.profileImage = uploadedImage._id;
-    await user.save();
+    await user.save({ session });
+    console.log("4");
+    await session.commitTransaction();
+    session.endSession();
 
     res.json(uploadedImage);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({
+      error: err.message,
+      stack: err.stack,
+      name: err.name,
+      code: err.code,
+  });
   }
-})
+});
 
 router.post('/listings/:listingId/uploadImage', upload.single('image'), async (req, res) => {
   try {
